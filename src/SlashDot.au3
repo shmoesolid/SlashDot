@@ -10,43 +10,145 @@
 
 #ce ----------------------------------------------------------------------------
 
+#include <WindowsConstants.au3>
+#include <GUIConstantsEx.au3>
+#include <EditConstants.au3>
+
 #include <Clipboard.au3>
 #include <String.au3>
 
-Local $newData = "";
-Local $data = _ClipBoard_GetData();
-Local $split = StringSplit($data, @CRLF)
+Opt("GUIOnEventMode", 1)
 
-For $x = 1 To $split[0] Step 1
+Global $hGui, $hEdit, $hCheckbox, $hButtonRun, $hButtonCopy
 
-	Local $curData = $split[$x];
-	If NOT $curData Then ContinueLoop;
-	
-	Local $stripped = StringRegExpReplace($curData,"[^0-9a-zA-Z\s]","")
+_gui_create();
 
-	Switch StringLen($stripped)
-		Case 16 ; format should be 12.AAAA.123456..BBBB
-			$stripped = _StringInsert($stripped, "..", 12);
-			$stripped = _StringInsert($stripped, ".", 6);
-			$stripped = _StringInsert($stripped, ".", 2);
+Func _gui_create()
 
-		Case 19 ; format should be 12.AAAA.123456.BBB.CCCC
-			$stripped = _StringInsert($stripped, ".", 15);
-			$stripped = _StringInsert($stripped, ".", 12);
-			$stripped = _StringInsert($stripped, ".", 6);
-			$stripped = _StringInsert($stripped, ".", 2);
+	$hGui = GUICreate("SlashDot", 400, 600)
+	$hEdit = GUICtrlCreateEdit("", 0, 0, 400, 560, $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_MULTILINE + $ES_WANTRETURN)
+	;$hCheckbox = GUICtrlCreateCheckbox("Strip nonsense", 30, 570, 120, 20)
+	GUICtrlSetState(-1, $GUI_CHECKED)
+	$hButtonCopy = GUICtrlCreateButton("Copy", 230, 570, 60, 20)
+	$hButtonRun = GUICtrlCreateButton("Run", 310, 570, 60, 20)
 
-		Case Else
-			; do nothing
-	EndSwitch
+	GUISetOnEvent($GUI_EVENT_CLOSE, "_gui_close")
+	GUICtrlSetOnEvent($hButtonRun, "_gui_buttonRun")
+	GUICtrlSetOnEvent($hButtonCopy, "_gui_buttonCopy")
 
-	$newData &= $stripped & @CR;
+	GUISetState(@SW_SHOW, $hGui)
 
-Next
+	While 1
+		Sleep(10)
+	WEnd
 
-_ClipBoard_SetData($newData);
+EndFunc
+
+Func _gui_close()
+	GUIDelete($hGui)
+	Exit
+EndFunc
+
+Func _gui_buttonCopy()
+	_ClipBoard_SetData( GUICtrlRead($hEdit) )
+EndFunc
+
+Func _gui_buttonRun()
+	Local $newData = "";
+	Local $discard = true;(GUICtrlRead($hCheckbox) = $GUI_CHECKED)
+	Local $data = GUICtrlRead($hEdit);
+	Local $split = StringSplit($data, @CRLF);
+
+	For $x = 1 To $split[0] Step 1
+
+		Local $curData = $split[$x];
+		If NOT $curData Then ContinueLoop;
+		
+		Local $stripped = StringRegExpReplace($curData,"[^0-9a-zA-Z\s]","");
+
+		; attempt to split by space
+		Local $splitLine = StringSplit($stripped, " ");
+		Local $newLine = ""
+
+		For $y = 1 To $splitLine[0] Step 1
+			Local $curDataLine = $splitLine[$y];
+			If NOT $curDataLine Then ContinueLoop;
+
+			Switch StringLen($curDataLine)
+				Case 16 ; format should be 12.AAAA.123456..BBBB
+					$curDataLine = _StringInsert($curDataLine, "..", 12);
+					$curDataLine = _StringInsert($curDataLine, ".", 6);
+					$curDataLine = _StringInsert($curDataLine, ".", 2);
+
+				Case 19 ; format should be 12.AAAA.123456.BBB.CCCC
+					$curDataLine = _StringInsert($curDataLine, ".", 15);
+					$curDataLine = _StringInsert($curDataLine, ".", 12);
+					$curDataLine = _StringInsert($curDataLine, ".", 6);
+					$curDataLine = _StringInsert($curDataLine, ".", 2);
+
+				;Case 22
+					; 81ATTM10043801TE002BHN
+					; IDK
+				
+				;72L1XX800232TWCC1193
+
+				Case Else
+					$curDataLine = "??? "&$curDataLine&" ???";
+			EndSwitch
+
+			; do something with $curDataLine
+			If NOT $discard Then
+				If $y > 0 Then $newLine &= " - "
+				$newLine &= $curDataLine
+			ElseIf $curDataLine <> $splitLine[$y] Then 
+				$newLine = $curDataLine
+			EndIf
+		Next
+
+		$newData &= $newLine & @CRLF;
+
+	Next
+
+	GUICtrlSetData($hEdit, $newData)
+EndFunc
 
 ; OLD
+;~ Local $newData = "";
+;~ Local $data = _ClipBoard_GetData();
+;~ Local $split = StringSplit($data, @CRLF);
+
+;~ For $x = 1 To $split[0] Step 1
+
+;~ 	Local $curData = $split[$x];
+;~ 	If NOT $curData Then ContinueLoop;
+	
+;~ 	Local $stripped = StringRegExpReplace($curData,"[^0-9a-zA-Z\s]","");
+
+;~ 	; attempt to split by space?  just screw it and make gui?
+
+;~ 	Switch StringLen($stripped)
+;~ 		Case 16 ; format should be 12.AAAA.123456..BBBB
+;~ 			$stripped = _StringInsert($stripped, "..", 12);
+;~ 			$stripped = _StringInsert($stripped, ".", 6);
+;~ 			$stripped = _StringInsert($stripped, ".", 2);
+
+;~ 		Case 19 ; format should be 12.AAAA.123456.BBB.CCCC
+;~ 			$stripped = _StringInsert($stripped, ".", 15);
+;~ 			$stripped = _StringInsert($stripped, ".", 12);
+;~ 			$stripped = _StringInsert($stripped, ".", 6);
+;~ 			$stripped = _StringInsert($stripped, ".", 2);
+
+;~ 		Case Else
+;~ 			; do nothing
+;~ 	EndSwitch
+
+;~ 	$newData &= $stripped & @CR;
+
+;~ Next
+
+;~ _ClipBoard_SetData($newData);
+
+; DOUBLE OLD
 ;~ Local $replaced = StringReplace($data, "/", ".");
 ;~ _ClipBoard_SetData($replaced);
 
