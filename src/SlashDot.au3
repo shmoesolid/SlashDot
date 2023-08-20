@@ -10,6 +10,8 @@
 
 #ce ----------------------------------------------------------------------------
 
+#include <Array.au3>
+
 #include <WindowsConstants.au3>
 #include <GUIConstantsEx.au3>
 #include <EditConstants.au3>
@@ -63,7 +65,14 @@ Func _gui_buttonRun()
 
 		Local $curData = $split[$x];
 		If NOT $curData Then ContinueLoop;
-		
+
+	    Local $aTest = StringRegExp($curData, "\d{2}\.[a-zA-Z0-9]{4}\.\d{6}\.\.(TWCC|CHTR)", 2); "[\d{2}\.[a-zA-Z0-9]{4}\.\d{6}\.\.(TWCC|CHTR)]"
+		If @error Then ContinueLoop;
+
+		$newData &= $aTest[0] & @CRLF;
+
+
+		#cs
 		Local $stripped = StringRegExpReplace($curData,"[^0-9a-zA-Z\s]","");
 
 		; attempt to split by space
@@ -89,7 +98,7 @@ Func _gui_buttonRun()
 				;Case 22
 					; 81ATTM10043801TE002BHN
 					; IDK
-				
+
 				;72L1XX800232TWCC1193
 
 				Case Else
@@ -100,12 +109,13 @@ Func _gui_buttonRun()
 			If NOT $discard Then
 				If $y > 0 Then $newLine &= " - "
 				$newLine &= $curDataLine
-			ElseIf $curDataLine <> $splitLine[$y] Then 
+			ElseIf $curDataLine <> $splitLine[$y] Then
 				$newLine = $curDataLine
 			EndIf
 		Next
 
 		$newData &= $newLine & @CRLF;
+		#ce
 
 	Next
 
@@ -121,7 +131,7 @@ EndFunc
 
 ;~ 	Local $curData = $split[$x];
 ;~ 	If NOT $curData Then ContinueLoop;
-	
+
 ;~ 	Local $stripped = StringRegExpReplace($curData,"[^0-9a-zA-Z\s]","");
 
 ;~ 	; attempt to split by space?  just screw it and make gui?
