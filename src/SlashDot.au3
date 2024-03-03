@@ -66,13 +66,18 @@ Func _gui_buttonRun()
 		Local $curData = $split[$x];
 		If NOT $curData Then ContinueLoop;
 
-	    Local $aTest = StringRegExp($curData, "\d{2}\.[a-zA-Z0-9]{4}\.\d{6}\.\.(TWCC|CHTR)", 2); "[\d{2}\.[a-zA-Z0-9]{4}\.\d{6}\.\.(TWCC|CHTR)]"
+	    Local $aTest = StringRegExp($curData, "\d{2}\.[a-zA-Z0-9]{4}\.\d{6}(\.\.|\.[a-zA-Z0-9]{3}\.)(TWCC|CHTR)", 2); 31.L2XX.000003.LXM.TWCC
 		If @error Then ContinueLoop;
 
 		$newData &= $aTest[0] & @CRLF;
 
+	Next
 
-		#cs
+	GUICtrlSetData($hEdit, $newData)
+EndFunc
+
+; OLD
+#cs
 		Local $stripped = StringRegExpReplace($curData,"[^0-9a-zA-Z\s]","");
 
 		; attempt to split by space
@@ -116,13 +121,6 @@ Func _gui_buttonRun()
 
 		$newData &= $newLine & @CRLF;
 		#ce
-
-	Next
-
-	GUICtrlSetData($hEdit, $newData)
-EndFunc
-
-; OLD
 ;~ Local $newData = "";
 ;~ Local $data = _ClipBoard_GetData();
 ;~ Local $split = StringSplit($data, @CRLF);
